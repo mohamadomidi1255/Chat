@@ -1,36 +1,56 @@
 import 'dart:developer';
 import 'package:chat/constant/my_colors.dart';
-import 'package:chat/view/Register_screen.dart';
-import 'package:chat/view/list_users_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 
-class LoginScreen extends StatefulWidget {
+import '../users screens/list_users_screen.dart';
+
+class RegisterScreen extends StatefulWidget {
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   var email_controller = TextEditingController();
+  var name_controller = TextEditingController();
   var password_controller = TextEditingController();
-  var passwordVisible = true;
+  bool passwordVisible = true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
 
-  void loginuser(var email, var pass) async {
-    final User? user =
-        (await _auth.signInWithEmailAndPassword(email: email, password: pass))
-            .user;
-
+  void registeruser(var mail, var pass) async {
+    final User? user = (await _auth.createUserWithEmailAndPassword(
+            email: mail, password: pass))
+        .user;
     if (user == null) {
-      log("sign in failed!!");
+      log("sign up failed!!");
     } else {
-      Get.to(ListUsersScreen());
-      log("user login..");
+      addser(mail, name_controller.text);
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ListUsersScreen(),
+          ));
+      log("user created..");
     }
+  }
+
+  void addser(var mail, var name) async {
+    return users.add({
+      "name": name,
+      "email": mail,
+      "userid": _auth.currentUser?.uid
+    }).then((value) {
+      log("User added");
+    }).catchError((onError) {
+      log("error: $onError");
+    });
   }
 
   @override
@@ -45,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Padding(
                     padding: EdgeInsets.all(8),
                     child: Text(
-                      "ورود",
+                      "ثبت نام",
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -55,22 +75,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               SizedBox(
-                height: Get.height / 7,
+                height: Get.height / 12,
+              ),
+              Image.asset(
+                "assets/images/icon.png",
+                height: 200,
+                fit: BoxFit.cover,
               ),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: TextField(
-                  controller: email_controller,
+                  controller: name_controller,
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.email),
-                    hintText: "ایمیل",
+                    hintText: "نام کاربری",
+                    prefixIcon: const Icon(CupertinoIcons.person),
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(width: 1.5),
                       borderRadius: BorderRadius.all(Radius.circular(15)),
                     ),
                     focusedBorder: (OutlineInputBorder(
                       borderSide:
-                          BorderSide(width: 1.5, color: MyColors().allColor),
+                          BorderSide(width: 1.5, color: MyColors().themeColor),
                       borderRadius: const BorderRadius.all(Radius.circular(15)),
                     )),
                   ),
@@ -79,7 +104,25 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: TextField(
-                  obscureText: passwordVisible,
+                  controller: email_controller,
+                  decoration: InputDecoration(
+                    hintText: "ایمیل",
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    enabledBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(width: 1.5),
+                      borderRadius: BorderRadius.all(Radius.circular(15)),
+                    ),
+                    focusedBorder: (OutlineInputBorder(
+                      borderSide:
+                          BorderSide(width: 1.5, color: MyColors().themeColor),
+                      borderRadius: const BorderRadius.all(Radius.circular(15)),
+                    )),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: TextField(
                   controller: password_controller,
                   decoration: InputDecoration(
                     suffixIcon: IconButton(
@@ -99,70 +142,53 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     focusedBorder: (OutlineInputBorder(
                       borderSide:
-                          BorderSide(width: 1.5, color: MyColors().allColor),
+                          BorderSide(width: 1.5, color: MyColors().themeColor),
                       borderRadius: const BorderRadius.all(Radius.circular(15)),
                     )),
                   ),
+                  obscureText: passwordVisible,
                 ),
               ),
               SizedBox(
                 height: Get.height / 40,
               ),
               InkWell(
-                onTap: () {
+                onTap: (() {
                   if (email_controller.text.isEmpty) {
                     Get.snackbar("خطا", "لطفا ایمیل خود را وارد کنید",
-                        backgroundColor: MyColors().allColor,
+                        backgroundColor: MyColors().themeColor,
                         colorText: Colors.white,
                         duration: Duration(seconds: 4));
                   }
                   if (password_controller.text.isEmpty) {
                     Get.snackbar("خطا", "لطفا رمز عبور خود را وارد کنید",
-                        backgroundColor: MyColors().allColor,
+                        backgroundColor: MyColors().themeColor,
+                        colorText: Colors.white,
+                        duration: Duration(seconds: 4));
+                  }
+                  if (name_controller.text.isEmpty) {
+                    Get.snackbar("خطا", "لطفا نام کلربری خود را وارد کنید",
+                        backgroundColor: MyColors().themeColor,
                         colorText: Colors.white,
                         duration: Duration(seconds: 4));
                   }
                   setState(() {
-                    loginuser(email_controller.text, password_controller.text);
+                    registeruser(
+                        email_controller.text, password_controller.text);
                   });
-                },
+                }),
                 child: Container(
                   height: 60,
                   width: 180,
                   decoration: BoxDecoration(
-                      color: MyColors().allColor,
+                      color: MyColors().themeColor,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(20))),
                   child: const Center(
                       child: Text(
-                    "ورود",
+                    "ثبت نام",
                     style: TextStyle(color: Colors.white, fontSize: 20),
                   )),
-                ),
-              ),
-              SizedBox(
-                height: Get.height / 6.8,
-              ),
-              Container(
-                height: Get.height / 3.5,
-                decoration: BoxDecoration(
-                    color: MyColors().allColor,
-                    borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(80),
-                        topRight: Radius.circular(80))),
-                child: Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => RegisterScreen()));
-                    },
-                    child: const Text(
-                      "ثبت نام",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                  ),
                 ),
               ),
             ],

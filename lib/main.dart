@@ -1,6 +1,7 @@
-import 'package:chat/view/list_users_screen.dart';
-import 'package:chat/view/login_screen.dart';
-import 'package:chat/view/Register_screen.dart';
+import 'package:chat/view/login/login_screen.dart';
+import 'package:chat/view/login/Register_screen.dart';
+import 'package:chat/view/splash_screens.dart';
+import 'package:chat/view/users%20screens/list_users_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -23,35 +24,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List<Widget> listScreen = [];
-
-  var currentScreen = 0;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  @override
-  void initState() {
-    listScreen.add(LoginScreen());
-    listScreen.add(RegisterScreen());
-    listScreen.add(const ListUsersScreen());
-    CheckUser();
-  }
-
-  void CheckUser() {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      setState(() {
-        currentScreen = 2;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      locale: const Locale("fa"),
+    return const GetMaterialApp(
+      locale: Locale("fa"),
       debugShowCheckedModeBanner: false,
-      home: listScreen[currentScreen],
+      home: SplashScreen(),
     );
   }
 }

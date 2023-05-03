@@ -1,15 +1,17 @@
-import 'dart:ui';
+import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dialogs/flutter_dialogs.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:chat/view/login/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chat/constant/my_colors.dart';
 import 'package:chat/model/user_model.dart';
-import 'package:chat/view/Account_screen.dart';
-import 'package:chat/view/chat_screen.dart';
-import 'package:chat/view/login_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:get/get.dart';
+import '../../controller/pick_controller.dart';
+import 'Account_screen.dart';
+import 'chat_screen.dart';
 
 class ListUsersScreen extends StatefulWidget {
   const ListUsersScreen({Key? key}) : super(key: key);
@@ -28,6 +30,7 @@ class _ListUsersScreenState extends State<ListUsersScreen> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final firestoreInstance = FirebaseFirestore.instance.collection("users");
+  FilePickerController controller = Get.put(FilePickerController());
 
   @override
   Widget build(BuildContext context) {
@@ -38,16 +41,18 @@ class _ListUsersScreenState extends State<ListUsersScreen> {
           children: [
             DrawerHeader(
               padding: const EdgeInsets.all(20),
-              child: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(100)),
-                  image: DecorationImage(
-                      opacity: 1,
-                      image: AssetImage(
-                        "assets/images/avatar.jpg",
-                      )),
-                ),
-              ),
+              child: controller.file.value.name == 'nothing'
+                  ? Container(
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(100)),
+                        image: DecorationImage(
+                            opacity: 1,
+                            image: AssetImage(
+                              "assets/images/avatar.jpg",
+                            )),
+                      ),
+                    )
+                  : Image.file(File(controller.file.value.path!)),
             ),
             ListTile(
                 onTap: () {
@@ -94,12 +99,12 @@ class _ListUsersScreenState extends State<ListUsersScreen> {
                                     "mohammad.omidi2011@gmail.com",
                                     style: TextStyle(
                                         fontSize: 16,
-                                        color: MyColors().allColor),
+                                        color: MyColors().themeColor),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Icon(Icons.email_outlined,
-                                        color: MyColors().allColor, size: 40),
+                                        color: MyColors().themeColor, size: 40),
                                   ),
                                 ],
                               )
@@ -153,7 +158,7 @@ class _ListUsersScreenState extends State<ListUsersScreen> {
       ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: MyColors().allColor,
+        backgroundColor: MyColors().themeColor,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -179,12 +184,18 @@ class _ListUsersScreenState extends State<ListUsersScreen> {
         stream: _userlist(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            const Center(child: const CircularProgressIndicator());
+            Center(
+              child: SpinKitFadingCube(
+                size: 40,
+                color: MyColors().themeColor,
+              ),
+            );
           }
-          List<Users> children = snapshot.data!.docs
-              .map((doc) => Users(doc['name'].toString(),
-                  doc['userid'].toString(), doc['email'].toString()))
-              .toList();
+          List<Users> children = snapshot.data?.docs
+                  .map((doc) => Users(doc['name'].toString(),
+                      doc['userid'].toString(), doc['email'].toString()))
+                  .toList() ??
+              [];
           return Container(
             child: ListView.builder(
               itemCount: children.length,

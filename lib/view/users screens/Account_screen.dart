@@ -1,16 +1,25 @@
-import 'dart:developer';
+import 'dart:io';
 
+import 'package:chat/controller/pick_controller.dart';
+import 'package:chat/services/pick_file.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:chat/constant/my_colors.dart';
-import 'package:chat/model/user_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:get/get.dart';
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
+  AccountScreen({super.key});
+
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  FilePickerController controller = Get.put(FilePickerController());
 
   @override
   Widget build(BuildContext context) {
@@ -21,33 +30,41 @@ class AccountScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          Stack(children: [
-            Container(
-              height: Get.height / 2,
-              decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image: AssetImage("assets/images/avatar.jpg"),
-                      fit: BoxFit.contain)),
-            ),
-            Positioned(
-              right: 10,
-              bottom: 0,
-              child: Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                    color: MyColors().allColor,
-                    borderRadius: const BorderRadius.all(Radius.circular(100))),
-                child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      CupertinoIcons.camera,
-                      size: 35,
-                      color: Color.fromARGB(207, 255, 255, 255),
-                    )),
-              ),
-            )
-          ]),
+          Obx(
+            () => Stack(children: [
+              controller.file.value.name == 'nothing'
+                  ? Container(
+                      height: Get.height / 2,
+                      decoration: const BoxDecoration(
+                          image: DecorationImage(
+                              image: AssetImage("assets/images/avatar.jpg"),
+                              fit: BoxFit.contain)),
+                    )
+                  : Image.file(File(controller.file.value.path!)),
+              Positioned(
+                right: 10,
+                bottom: 10,
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                      color: MyColors().themeColor,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(100))),
+                  child: IconButton(
+                      onPressed: () {
+                        //picke file
+                        pickFile();
+                      },
+                      icon: const Icon(
+                        CupertinoIcons.camera,
+                        size: 35,
+                        color: Color.fromARGB(207, 255, 255, 255),
+                      )),
+                ),
+              )
+            ]),
+          ),
           const SizedBox(
             height: 20,
           ),
@@ -62,60 +79,16 @@ class AccountScreen extends StatelessWidget {
                     Text(
                       "حساب کاربری",
                       style: TextStyle(
-                          color: MyColors().allColor,
+                          color: MyColors().themeColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 20),
                     ),
                   ],
                 ),
                 //1
-
                 const SizedBox(
                   height: 20,
                 ),
-                // InkWell(
-                //   onTap: (() {
-
-                //     // Get.bottomSheet(BottomSheet(
-                //     //     onClosing: () {},
-                //     //     builder: (contaxt) {
-                //     //       return Container();
-                //     //     }));
-                //   }),
-                //   child: Column(children: [
-                //     Row(
-                //       children: [
-                //         Text(
-                //           name.toString(),
-                //           style: const TextStyle(fontSize: 18),
-                //         ),
-                //       ],
-                //     ),
-                //     Row(
-                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //       children: [
-                //         Text(
-                //           " نام شما",
-                //           style: TextStyle(
-                //             fontSize: 16,
-                //             color: MyColors().allColor,
-                //           ),
-                //         ),
-                //         Text(
-                //           "برای تغییر ایمیل ضربه بزنید",
-                //           style: TextStyle(fontSize: 14, color: Colors.black87),
-                //         ),
-                //       ],
-                //     ),
-                //   ]),
-                // ),
-                // const Divider(
-                //   height: 1,
-                // ),
-                // const SizedBox(
-                //   height: 10,
-                // ),
-
                 //2
                 InkWell(
                   onTap: (() {
@@ -145,7 +118,7 @@ class AccountScreen extends StatelessWidget {
                                       label: const Text("ایمیل جدید"),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
-                                          color: MyColors().allColor,
+                                          color: MyColors().themeColor,
                                           width: 1.5,
                                         ),
                                         borderRadius: const BorderRadius.all(
@@ -166,7 +139,7 @@ class AccountScreen extends StatelessWidget {
                                   width: 180,
                                   height: 70,
                                   decoration: BoxDecoration(
-                                      color: MyColors().allColor,
+                                      color: MyColors().themeColor,
                                       borderRadius: const BorderRadius.all(
                                           Radius.circular(20))),
                                   child: const Center(
@@ -198,7 +171,7 @@ class AccountScreen extends StatelessWidget {
                           " ایمیل شما",
                           style: TextStyle(
                             fontSize: 16,
-                            color: MyColors().allColor,
+                            color: MyColors().themeColor,
                           ),
                         ),
                         const Text(
@@ -234,7 +207,7 @@ class AccountScreen extends StatelessWidget {
                             " ایدی شما",
                             style: TextStyle(
                               fontSize: 16,
-                              color: MyColors().allColor,
+                              color: MyColors().themeColor,
                             ),
                           ),
                         ],
@@ -270,9 +243,10 @@ class AccountScreen extends StatelessWidget {
                                       color: Colors.red,
                                       fontWeight: FontWeight.bold)),
                               onPressed: () {
-                                user.delete();
-
-                                Navigator.pop(context);
+                                setState(() {
+                                  user.delete();
+                                  _auth.signOut();
+                                });
                               },
                             ),
                           ],

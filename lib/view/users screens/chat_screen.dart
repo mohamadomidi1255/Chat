@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ChatScreen extends StatefulWidget {
   final Users user;
@@ -21,6 +22,8 @@ class _ChatScreenState extends State<ChatScreen> {
   var text_controller = TextEditingController();
   final firebaseInstance = FirebaseFirestore.instance.collection('messages');
   var key_relation;
+  // var timehour = DateTime.now().hour;
+  var timeminute = DateTime.now().minute;
 
   void Sendmsg(var text) async {
     return firebaseInstance.add({
@@ -74,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            backgroundColor: MyColors().allColor,
+            backgroundColor: MyColors().themeColor,
             title: Row(
               children: [
                 Padding(
@@ -108,12 +111,19 @@ class _ChatScreenState extends State<ChatScreen> {
               stream: _chatlist(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  Center(child: CircularProgressIndicator());
+                  Center(
+                    child: SpinKitFadingCube(
+                      size: 40,
+                      color: MyColors().themeColor,
+                    ),
+                  );
                 }
-                List<Message> children = snapshot.data!.docs
-                    .map((e) => Message(e['message'].toString(),
-                        e['sender'].toString(), e['receiver'].toString()))
-                    .toList();
+
+                List<Message> children = snapshot.data?.docs
+                        .map((doc) => Message(doc['message'].toString(),
+                            doc['sender'], doc['receiver'].toString()))
+                        .toList() ??
+                    [];
                 return Container(
                   child: ListView.builder(
                     itemCount: children.length,
@@ -180,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 const EdgeInsets.symmetric(vertical: 13.0, horizontal: 13.0),
             margin: const EdgeInsets.only(right: 5),
             decoration: BoxDecoration(
-                color: MyColors().allColor,
+                color: MyColors().themeColor,
                 borderRadius: BorderRadius.circular(28.0)),
             child: InkWell(
               onTap: () {
